@@ -42,7 +42,8 @@ class LF:
         return (sign,t)
     
     # 获取主播视频流信息
-    def getAnchorVideo(self,data:dict):
+    def getAnchorVideo(self,liveId:str)->dict:
+        data={"liveId":liveId,"ccode":"live05010101laifeng","app":"Pc"}
         # '{"liveId":"8122883","ccode":"live05010101laifeng","app":"Pc"}'
         headers = {
             'authority': 'acs.laifeng.com',
@@ -59,9 +60,8 @@ class LF:
             'sec-fetch-mode': 'cors',
             'sec-fetch-site': 'same-site',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'}
-        # 第一次请求
+        ## 第一次请求
         sign,t = self.getSign(self.dicToStrCookies(),data)
-        
         params = {
             'jsv': '2.6.1',
             'appKey': '24679788',
@@ -79,15 +79,16 @@ class LF:
             cookies=self.broCookies,
             headers=headers,
         )
-        # print(response.cookies)
+        # 第一次请求失败
         if response.json()['ret']==['FAIL_SYS_TOKEN_EXOIRED::令牌过期']:
-            print("token 过期")
+            print("--------------token 过期--------------")
+            # 第一次请求失败第二次请求
             # 重新赋值cookies的关键参数
             self.broCookies['_m_h5_tk']=response.cookies['_m_h5_tk']
             self.broCookies['_m_h5_tk_enc']=response.cookies['_m_h5_tk_enc']
             # 重新获取sign和t参数
             sign,t = self.getSign(self.dicToStrCookies(),data)
-            # 第一次请求失败第二次请求
+            # 进行params重新提交
             params = {
                 'jsv': '2.6.1',
                 'appKey': '24679788',
@@ -106,14 +107,24 @@ class LF:
                 cookies=self.broCookies,
                 headers=headers,
             )
-            return response.json()
+            if response.json()["ret"]==['SUCCESS::成功']:
+                return {
+                        "playUrl":response.json()["data"]["data"]["micInfo"]["mcs"][0]["ms"]["playInfo"]["hls"][0]["Url"]
+                    }
         else:
-            return response.json()
+            if response.json()["ret"]==['SUCCESS::成功']:
+                return {
+                        "playUrl":response.json()["data"]["data"]["micInfo"]["mcs"][0]["ms"]["playInfo"]["hls"][0]["Url"]
+                    }
+if __name__ == '__main__':
         
-        
-obj=LF()
-# print(obj.dicToStrCookies())
-print(obj.getAnchorVideo({"liveId":"8122883","ccode":"live05010101laifeng","app":"Pc"}))
-print(obj.getAnchorVideo({"liveId":"8122883","ccode":"live05010101laifeng","app":"Pc"}))
-
-print(obj.getAnchorVideo({"liveId":"8122883","ccode":"live05010101laifeng","app":"Pc"}))
+    obj=LF()
+    # print(obj.dicToStrCookies())
+    print(obj.getAnchorVideo("8122883"))
+    # import time
+    # time.sleep(2)
+    print(obj.getAnchorVideo("8122883"))
+    print(obj.getAnchorVideo("8122883"))
+    
+    # time.sleep(2)
+    # print(obj.getAnchorVideo({"liveId":"8122883","ccode":"live05010101laifeng","app":"Pc"}))
